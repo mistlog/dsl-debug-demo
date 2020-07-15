@@ -3,12 +3,16 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "build": "td ./src"
+    "build": "cross-env NODE_ENV=production td ./src",
+    "dev": "cross-env NODE_ENV=dev td ./src"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typedraft": "0.2.2"
+    "@types/node": "^14.0.23",
+    "cross-env": "^7.0.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "typedraft": "0.2.2"
+  }
 }
