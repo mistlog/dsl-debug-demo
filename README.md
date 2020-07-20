@@ -1,2 +1,2 @@
 # dsl-debug-demo
-Demo project used in [Implement a DSL](https://mistlog.github.io/typedraft-docs/docs/implement-a-dsl).
+Demo project used in https://github.com/mistlog/typedraft/issues/18
