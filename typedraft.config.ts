@@ -1,33 +1,64 @@
-import { Statement } from "@babel/types";
-import { IDSL } from "typedraft";
+import { breakStatement, switchCase, switchStatement, Statement, ExpressionStatement, CallExpression, MemberExpression, ArrayExpression, StringLiteral, Identifier, ArrowFunctionExpression } from "@babel/types";
+import { IDSL, ToString, ToAst } from "typedraft";
 
-class Debug implements IDSL {
-    m_Merge?: boolean;
-    m_Env: string;
+/**
+ * convert
+ * 
+ * {
+ *   "use match",
+ *   ["a","b","c"].map(value => {...})
+ * }
+ * 
+ * to
+ * 
+ * switch (value) {
+ *   case "a": {...} break;
+ *   case "b": {...} break;
+ *   case "c": {...} break;
+ * }
+ */
+class Match implements IDSL {
+    m_Merge: boolean;
 
-    constructor(option: { merge: boolean, env: string }) {
-        this.m_Merge = option?.merge;
-        this.m_Env = option?.env;
+    constructor() {
+        this.m_Merge = true;
     }
 
     Transcribe(block: Array<Statement>): Array<Statement> {
-        if (this.m_Env === "dev") {
-            const [use_dsl, ...rest] = block;
-            return rest;
-        }
-        else if (this.m_Env === "production") {
-            return [];
-        }
+        const [use_match, pattern] = block;
 
-        throw new Error(`invalid env: ${this.m_Env}, please use dev or production`);
+        const expression = (pattern as ExpressionStatement).expression;
+        const callee = ((expression as CallExpression).callee) as MemberExpression;
+        const tests = (callee.object as ArrayExpression).elements.map((each: StringLiteral) => each);
+        // console.log(tests); 
+        // expected: [ 'CancelSubscribe', 'SetKV', 'DeleteByKey' ]
+
+        const [arrow_expression] = ((expression as CallExpression).arguments) as [ArrowFunctionExpression];
+        const [to_match] = arrow_expression.params as [Identifier];
+        // console.log(to_match);
+        // expected: _type
+
+        // we can manipulate ast to get the same result
+        // for brevity, we use string.replace here:
+        const case_body = arrow_expression.body;
+        const consequents = tests
+            .map(test => ToString(case_body).replace(`[${to_match.name}]`, `.${test.value}`))
+            .map(str => ToAst(str));
+
+        //
+        const switch_statement = switchStatement(
+            to_match,
+            tests.map((test, index) => switchCase(test, [consequents[index], breakStatement()]))
+        );
+        return [switch_statement];
     }
 }
 
 export default {
     DSLs: [
         {
-            name: "debug",
-            dsl: () => new Debug({ merge: true, env: process.env.NODE_ENV || "dev" })
+            name: "match",
+            dsl: () => new Match()
         }
     ]
 }
