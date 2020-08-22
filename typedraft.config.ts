@@ -5,7 +5,7 @@ import { IDSL, ToString, ToAst } from "typedraft";
  * convert
  * 
  * {
- *   "use match",
+ *   "use match";
  *   ["a","b","c"].map(value => {...})
  * }
  * 
